@@ -15,3 +15,12 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
 
 }
 
+[HarmonyPatch(typeof(Debug), "get_isDebugBuild")]
+public static class DebugBuildGetterPatch
+{
+    static bool Prefix(ref bool __result)
+    {
+        __result = true;
+        return false;
+    }
+}
