@@ -35,7 +35,8 @@ public static class DebugBuildGetterPatch
 {
     static bool Prefix(ref bool __result)
     {
-        __result = true;
+        __result = MechanicaMultiplayerFix.enableDebugMode.Value;
+        if (__result) Debug.Log("Debuging mode called forced TRUE");
         return false;
     }
 }
