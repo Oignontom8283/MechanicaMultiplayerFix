@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <Reference Include="HarmonyLib">
+      <HintPath>Libraries/0Harmony.dll</HintPath>
+    </Reference>
+
+    <Reference Include="BepInEx">
+      <HintPath>Libraries/BepInEx.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>Libraries/UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine">
+      <HintPath>Libraries/UnityEngine.dll</HintPath>
+    </Reference>
+
+    <Reference Include="Assembly-CSharp">
+      <HintPath>Libraries/Assembly-CSharp.dll</HintPath>
+    </Reference>
+
+    <Reference Include="PhotonRealtime">
+      <HintPath>Libraries/PhotonRealtime.dll</HintPath>
+    </Reference>
+
+    <Reference Include="PhotonUnityNetworking">
+      <HintPath>Libraries/PhotonUnityNetworking.dll</HintPath>
+    </Reference>
+
+  </ItemGroup>
+</Project>
