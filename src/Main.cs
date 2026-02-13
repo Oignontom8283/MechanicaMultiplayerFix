@@ -3,7 +3,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
 
-[BepInPlugin("com.oignontom8283.mechanicamultiplayerfix", "MechanicaMultiplayerFix", "1.0.0")]
+[BepInPlugin("MechanicaMultiplayerFix", "MechanicaMultiplayerFix", "1.0.0")]
 public class MechanicaMultiplayerFix : BaseUnityPlugin
 {
     // Configuration mod entrys
