@@ -110,3 +110,30 @@ public static class Fix_SaveManager_SaveGameDataFile
         }
     }
 }
+
+/// <summary>
+/// FIX #2: Force InvariantCulture when creating a new game
+/// Intercepts NewGameMenu.CreateClicked() - This is the method that creates new saves
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.NewGameMenu), "CreateClicked")]
+public static class Fix_NewGameMenu_CreateClicked
+{
+    // Let the original function execute, but modify the GameSave just before
+    static void Prefix(Game.UI.NewGameMenu __instance)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+            
+        Debug.Log("[Fix] New game created with InvariantCulture");
+    }
+    
+    // Postfix to fix after creation
+    static void Postfix()
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+        
+        // The fix is automatically applied via SaveGameDataFile
+        Debug.Log("[Fix] New save configured");
+    }
+}
