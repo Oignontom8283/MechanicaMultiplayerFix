@@ -2,6 +2,11 @@
 using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
+using System;
+using System.Globalization;
+using System.Collections.Generic;
+using Game.Saving;
+using Game.UI;
 
 [BepInPlugin("MechanicaMultiplayerFix", "MechanicaMultiplayerFix", "1.0.0")]
 public class MechanicaMultiplayerFix : BaseUnityPlugin

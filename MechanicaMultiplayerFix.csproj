@@ -5,6 +5,13 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!-- Exclude the Assembly-CSharp folder from compilation -->
+  <ItemGroup>
+    <Compile Remove="Assembly-CSharp\**" />
+    <EmbeddedResource Remove="Assembly-CSharp\**" />
+    <None Remove="Assembly-CSharp\**" />
+  </ItemGroup>
+
   <ItemGroup>
 
     <Reference Include="HarmonyLib">
@@ -19,12 +26,20 @@
       <HintPath>Libraries/UnityEngine.CoreModule.dll</HintPath>
     </Reference>
 
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>Libraries/UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
+
     <Reference Include="UnityEngine">
       <HintPath>Libraries/UnityEngine.dll</HintPath>
     </Reference>
 
     <Reference Include="Assembly-CSharp">
       <HintPath>Libraries/Assembly-CSharp.dll</HintPath>
+    </Reference>
+
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>Libraries/Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
 
     <Reference Include="PhotonRealtime">
