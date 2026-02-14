@@ -8,6 +8,7 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
 {
     // Configuration mod entrys
     public static ConfigEntry<bool> enableDebugMode;
+    public static ConfigEntry<bool> enableMultiplayerFixes;
     
     void Awake()
     {
@@ -21,7 +22,15 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
             "Enable debug mode for the game (Theoretically incompatible with other mods)" // Description
         );
 
+        enableMultiplayerFixes = Config.Bind(
+            "General",
+            "EnableMultiplayerFixes",
+            true,
+            "Enable multiplayer connection fixes (DateTime culture, SteamAPI safety)"
+        );
+
         Debug.Log("Debug mode is " + (enableDebugMode.Value ? "enabled" : "disabled"));
+        Debug.Log("Multiplayer fixes are " + (enableMultiplayerFixes.Value ? "enabled" : "disabled"));
         Debug.Log("MechanicaMultiplayerFix is now running!");
 
         var harmony = new Harmony("com.oignontom8283.mechanicamultiplayerfix");
