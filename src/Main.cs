@@ -44,6 +44,11 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
     }
 }
 
+/// <summary>
+/// Patch to force Debug.isDebugBuild to return our config value
+/// This allows us to enable debug features in the game without actually being in a debug build
+/// WARNING: This will very likely cause compatibility issues with other mods that would try to do the same thing
+/// </summary>
 [HarmonyPatch(typeof(Debug), "get_isDebugBuild")]
 public static class DebugBuildGetterPatch
 {
