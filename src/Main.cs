@@ -19,6 +19,13 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
     {
         Debug.Log("[MechanicaMultiplayerFix] starting up...");
 
+        enableMultiplayerFixes = Config.Bind(
+            "General",
+            "EnableMultiplayerFixes",
+            true,
+            "Enable multiplayer connection fixes (DateTime culture, SteamAPI safety)"
+        );
+        
         // Init BepInEx mod configuration
         enableDebugMode = Config.Bind(
             "General",                     // Section
@@ -27,12 +34,6 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
             "Enable debug mode for the game (Theoretically incompatible with other mods)" // Description
         );
 
-        enableMultiplayerFixes = Config.Bind(
-            "General",
-            "EnableMultiplayerFixes",
-            true,
-            "Enable multiplayer connection fixes (DateTime culture, SteamAPI safety)"
-        );
 
         Debug.Log("[MechanicaMultiplayerFix] Debug mode is " + (enableDebugMode.Value ? "enabled" : "disabled"));
         Debug.Log("[MechanicaMultiplayerFix] Multiplayer fixes are " + (enableMultiplayerFixes.Value ? "enabled" : "disabled"));
