@@ -200,3 +200,26 @@ public static class Fix_LoadGameMenu_LoadGameSaves
         }
     }
 }
+
+/// <summary>
+/// FIX #4: Catch SteamID parsing errors in lobbies
+/// Prevents crashes when Steam data is corrupted
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.Lobby), "OnLobbyEntered")]
+public static class Fix_Lobby_OnLobbyEntered
+{
+    // Catch the exception and absorb it
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            // FIX: Absorb parsing errors instead of crashing
+            if (__exception is FormatException || __exception is OverflowException)
+            {
+                Debug.LogWarning("[Fix] Corrupted lobby data, ignored: " + __exception.Message);
+                return null; // Cancel the exception
+            }
+        }
+        return __exception; // Let other exceptions pass
+    }
+}
