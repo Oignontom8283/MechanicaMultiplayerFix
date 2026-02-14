@@ -245,3 +245,21 @@ public static class Fix_StorageUnitManager_LoadInventoryStorageUnits
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #6: Log network errors without crashing
+/// Helps diagnose connection issues
+/// </summary>
+[HarmonyPatch(typeof(Game.Saving.SaveManager), "RetrievePlayerData_Networked")]
+public static class Fix_SaveManager_RetrievePlayerData
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            // Log for diagnostic help (but let the exception continue)
+            Debug.LogError("[Fix] Error loading networked player data: " + __exception.Message);
+        }
+        return __exception;
+    }
+}
