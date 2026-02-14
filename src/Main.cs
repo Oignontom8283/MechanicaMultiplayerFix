@@ -223,3 +223,25 @@ public static class Fix_Lobby_OnLobbyEntered
         return __exception; // Let other exceptions pass
     }
 }
+
+/// <summary>
+/// FIX #5: Catch SteamID parsing errors in StorageUnitManager
+/// Prevents crashes when loading storage crates
+/// </summary>
+[HarmonyPatch(typeof(Game.StorageUnitFramework.StorageUnitManager), "LoadInventoryStorageUnits")]
+public static class Fix_StorageUnitManager_LoadInventoryStorageUnits
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            // FIX: Absorb SteamID parsing errors
+            if (__exception is FormatException || __exception is OverflowException)
+            {
+                Debug.LogWarning("[Fix] Invalid SteamID in StorageUnit, ignored: " + __exception.Message);
+                return null; // Cancel the exception
+            }
+        }
+        return __exception;
+    }
+}
