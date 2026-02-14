@@ -17,7 +17,7 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
     
     void Awake()
     {
-        Debug.Log("MechanicaMultiplayerFix is starting up...");
+        Debug.Log("[MechanicaMultiplayerFix] starting up...");
 
         // Init BepInEx mod configuration
         enableDebugMode = Config.Bind(
@@ -34,9 +34,9 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
             "Enable multiplayer connection fixes (DateTime culture, SteamAPI safety)"
         );
 
-        Debug.Log("Debug mode is " + (enableDebugMode.Value ? "enabled" : "disabled"));
-        Debug.Log("Multiplayer fixes are " + (enableMultiplayerFixes.Value ? "enabled" : "disabled"));
-        Debug.Log("MechanicaMultiplayerFix is now running!");
+        Debug.Log("[MechanicaMultiplayerFix] Debug mode is " + (enableDebugMode.Value ? "enabled" : "disabled"));
+        Debug.Log("[MechanicaMultiplayerFix] Multiplayer fixes are " + (enableMultiplayerFixes.Value ? "enabled" : "disabled"));
+        Debug.Log("[MechanicaMultiplayerFix] MechanicaMultiplayerFix is now running!");
 
         var harmony = new Harmony("com.oignontom8283.mechanicamultiplayerfix");
         harmony.PatchAll();
@@ -49,7 +49,7 @@ public static class DebugBuildGetterPatch
     static bool Prefix(ref bool __result)
     {
         __result = MechanicaMultiplayerFix.enableDebugMode.Value;
-        if (__result) Debug.Log("Debuging mode called forced TRUE");
+        if (__result) Debug.Log("[MechanicaMultiplayerFix] Debuging mode called forced TRUE");
         return false;
     }
 }
@@ -98,14 +98,14 @@ public static class Fix_SaveManager_SaveGameDataFile
                 jsonText = JsonUtility.ToJson(save, true);
                 System.IO.File.WriteAllText(infoPath, jsonText);
                 
-                Debug.Log("[Fix] Date saved with InvariantCulture: " + save.lastPlayedDate);
+                Debug.Log("[MechanicaMultiplayerFix] [Fix] Date saved with InvariantCulture: " + save.lastPlayedDate);
             }
             
             return false; // Abort original function call (we did it in its place)
         }
         catch (Exception ex)
         {
-            Debug.LogError("[Fix] Error in SaveGameDataFile: " + ex.Message);
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in SaveGameDataFile: " + ex.Message);
             return true; // In case of error, let the original execute
         }
     }
@@ -124,7 +124,7 @@ public static class Fix_NewGameMenu_CreateClicked
         if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
             return;
             
-        Debug.Log("[Fix] New game created with InvariantCulture");
+        Debug.Log("[MechanicaMultiplayerFix] [Fix] New game created with InvariantCulture");
     }
     
     // Postfix to fix after creation
@@ -134,7 +134,7 @@ public static class Fix_NewGameMenu_CreateClicked
             return;
         
         // The fix is automatically applied via SaveGameDataFile
-        Debug.Log("[Fix] New save configured");
+        Debug.Log("[MechanicaMultiplayerFix] [Fix] New save configured");
     }
 }
 
@@ -175,7 +175,7 @@ public static class Fix_LoadGameMenu_LoadGameSaves
                 else
                 {
                     invalidSaves.Add(save); // Keep even if date is invalid
-                    Debug.LogWarning("[Fix] Invalid date: " + save.lastPlayedDate);
+                    Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Invalid date: " + save.lastPlayedDate);
                 }
             }
             
@@ -192,11 +192,11 @@ public static class Fix_LoadGameMenu_LoadGameSaves
             saves.AddRange(validSaves);
             saves.AddRange(invalidSaves);
             
-            Debug.Log("[Fix] Sorted " + validSaves.Count + " saves");
+            Debug.Log("[MechanicaMultiplayerFix] [Fix] Sorted " + validSaves.Count + " saves");
         }
         catch (Exception ex)
         {
-            Debug.LogError("[Fix] Error in LoadGameSaves: " + ex.Message);
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in LoadGameSaves: " + ex.Message);
         }
     }
 }
@@ -216,7 +216,7 @@ public static class Fix_Lobby_OnLobbyEntered
             // FIX: Absorb parsing errors instead of crashing
             if (__exception is FormatException || __exception is OverflowException)
             {
-                Debug.LogWarning("[Fix] Corrupted lobby data, ignored: " + __exception.Message);
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Corrupted lobby data, ignored: " + __exception.Message);
                 return null; // Cancel the exception
             }
         }
@@ -238,7 +238,7 @@ public static class Fix_StorageUnitManager_LoadInventoryStorageUnits
             // FIX: Absorb SteamID parsing errors
             if (__exception is FormatException || __exception is OverflowException)
             {
-                Debug.LogWarning("[Fix] Invalid SteamID in StorageUnit, ignored: " + __exception.Message);
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Invalid SteamID in StorageUnit, ignored: " + __exception.Message);
                 return null; // Cancel the exception
             }
         }
@@ -258,7 +258,7 @@ public static class Fix_SaveManager_RetrievePlayerData
         if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
         {
             // Log for diagnostic help (but let the exception continue)
-            Debug.LogError("[Fix] Error loading networked player data: " + __exception.Message);
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error loading networked player data: " + __exception.Message);
         }
         return __exception;
     }
