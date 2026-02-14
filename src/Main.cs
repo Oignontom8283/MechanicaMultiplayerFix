@@ -39,7 +39,7 @@ public class MechanicaMultiplayerFix : BaseUnityPlugin
         Debug.Log("[MechanicaMultiplayerFix] Multiplayer fixes are " + (enableMultiplayerFixes.Value ? "enabled" : "disabled"));
         Debug.Log("[MechanicaMultiplayerFix] MechanicaMultiplayerFix is now running!");
 
-        var harmony = new Harmony("com.oignontom8283.mechanicamultiplayerfix");
+        var harmony = new Harmony("MechanicaMultiplayerFix");
         harmony.PatchAll();
     }
 }
