@@ -137,3 +137,66 @@ public static class Fix_NewGameMenu_CreateClicked
         Debug.Log("[Fix] New save configured");
     }
 }
+
+/// <summary>
+/// FIX #3: Parse dates with InvariantCulture + fallback to CurrentCulture
+/// Intercepts LoadGameMenu.LoadGameSaves() and re-sorts the saves
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.LoadGameMenu), "LoadGameSaves")]
+public static class Fix_LoadGameMenu_LoadGameSaves
+{
+    // Let the game load, then fix the sorting
+    static void Postfix(LoadGameMenu __instance)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+
+        try
+        {
+            // Retrieve the list of saves (private field)
+            var saves = (List<GameSave>)AccessTools.Field(typeof(LoadGameMenu), "loadedGameSaves").GetValue(__instance);
+            
+            if (saves == null || saves.Count == 0)
+                return;
+
+            // Separate valid and invalid saves
+            List<GameSave> validSaves = new List<GameSave>();
+            List<GameSave> invalidSaves = new List<GameSave>();
+            
+            foreach (var save in saves)
+            {
+                DateTime date;
+                // FIX: Try InvariantCulture first, then CurrentCulture (old saves)
+                if (DateTime.TryParse(save.lastPlayedDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ||
+                    DateTime.TryParse(save.lastPlayedDate, CultureInfo.CurrentCulture, DateTimeStyles.None, out date))
+                {
+                    validSaves.Add(save);
+                }
+                else
+                {
+                    invalidSaves.Add(save); // Keep even if date is invalid
+                    Debug.LogWarning("[Fix] Invalid date: " + save.lastPlayedDate);
+                }
+            }
+            
+            // Sort by date (most recent first)
+            validSaves.Sort((a, b) => {
+                DateTime dateA, dateB;
+                DateTime.TryParse(a.lastPlayedDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateA);
+                DateTime.TryParse(b.lastPlayedDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateB);
+                return dateB.CompareTo(dateA);
+            });
+            
+            // Put back into the list (valid first, then invalid)
+            saves.Clear();
+            saves.AddRange(validSaves);
+            saves.AddRange(invalidSaves);
+            
+            Debug.Log("[Fix] Sorted " + validSaves.Count + " saves");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[Fix] Error in LoadGameSaves: " + ex.Message);
+        }
+    }
+}
