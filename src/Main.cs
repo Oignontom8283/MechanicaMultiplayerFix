@@ -664,3 +664,62 @@ public static class Fix_NetworkedGameManager_OnDisconnected
         }
     }
 }
+
+/// <summary>
+/// FIX #19: Install log throttling to prevent log spam from blocking main thread
+/// Curvy errors can spam 1000s of identical messages per second, slowing Unity and causing Photon timeouts
+/// </summary>
+[HarmonyPatch]
+public static class Fix_LogThrottling
+{
+    private static Dictionary<string, float> lastLogTime = new Dictionary<string, float>();
+    private static Dictionary<string, int> suppressedCount = new Dictionary<string, int>();
+    private const float LOG_THROTTLE_SECONDS = 5f; // Only allow same message once per 5 seconds
+    
+    static Fix_LogThrottling()
+    {
+        Application.logMessageReceived += HandleLog;
+    }
+    
+    private static void HandleLog(string logString, string stackTrace, LogType type)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+            
+        // Only throttle errors (not warnings or info)
+        if (type != LogType.Error && type != LogType.Exception)
+            return;
+            
+        // Specifically throttle Curvy and other known spammy errors
+        if (logString.Contains("ArgumentOutOfRangeException") && 
+            (stackTrace.Contains("FluffyUnderware.Curvy") || stackTrace.Contains("CurvySpline")))
+        {
+            string key = "CurvySplineError";
+            float currentTime = Time.realtimeSinceStartup;
+            
+            if (lastLogTime.ContainsKey(key))
+            {
+                float timeSince = currentTime - lastLogTime[key];
+                if (timeSince < LOG_THROTTLE_SECONDS)
+                {
+                    // Suppress this log
+                    if (!suppressedCount.ContainsKey(key))
+                        suppressedCount[key] = 0;
+                    suppressedCount[key]++;
+                    return;
+                }
+                else
+                {
+                    // Log how many were suppressed
+                    if (suppressedCount.ContainsKey(key) && suppressedCount[key] > 0)
+                    {
+                        Debug.LogWarning($"[MechanicaMultiplayerFix] [LogThrottle] Suppressed {suppressedCount[key]} Curvy errors in last {(int)timeSince}s");
+                        suppressedCount[key] = 0;
+                    }
+                }
+            }
+            
+            lastLogTime[key] = currentTime;
+        }
+    }
+}
