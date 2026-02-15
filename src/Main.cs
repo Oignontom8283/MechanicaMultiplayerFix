@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Globalization;
 using System.Collections.Generic;
 using Game.Saving;
@@ -389,8 +390,7 @@ public static class Fix_Lobby_PlayerEnterOrLeave
 }
 
 /// <summary>
-/// FIX #12: Log and validate Exit_NoSave calls
-/// Helps diagnose premature exit triggers
+/// FIX #12: Log Exit_NoSave calls to help diagnose premature disconnects
 /// </summary>
 [HarmonyPatch(typeof(Game.Saving.SaveManager), "Exit_NoSave")]
 public static class Fix_SaveManager_Exit_NoSave
@@ -420,38 +420,157 @@ public static class Fix_Computer_ReceiveVirtualFunctionExecute
 
         try
         {
-            // Log the call with stack trace for debugging
-            Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Exit_NoSave called, stack trace:\n" + 
-                System.Environment.StackTrace);
-            
-            // Check if we're in a multiplayer session
-            var gameManager = UnityEngine.Object.FindObjectOfType<Game.GameManager>();
-            if (gameManager != null)
+            // Get virtualObjects list via reflection
+            var virtualObjectsField = AccessTools.Field(typeof(Game.ObjectScripts.Computer), "virtualObjects");
+            if (virtualObjectsField == null)
             {
-                var networkingField = AccessTools.Field(typeof(Game.GameManager), "networking");
-                if (networkingField != null)
+                Debug.LogError("[MechanicaMultiplayerFix] [Fix] Could not find virtualObjects field");
+                return true;
+            }
+
+            var virtualObjects = virtualObjectsField.GetValue(__instance) as System.Collections.IList;
+            if (virtualObjects == null)
+            {
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] virtualObjects is null, blocking RPC");
+                return false;
+            }
+
+            // Check bounds
+            if (voIndex < 0 || voIndex >= virtualObjects.Count)
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] ReceiveVirtualFunctionExecute: voIndex {voIndex} out of range (0-{virtualObjects.Count - 1}), ignoring");
+                return false; // Block execution
+            }
+
+            var virtualObject = virtualObjects[voIndex];
+            if (virtualObject == null)
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] virtualObjects[{voIndex}] is null, ignoring");
+                return false;
+            }
+
+            // Check functionIndex
+            var functionsField = AccessTools.Field(virtualObject.GetType(), "functions");
+            if (functionsField != null)
+            {
+                var functions = functionsField.GetValue(virtualObject) as System.Collections.IList;
+                if (functions != null && (functionIndex < 0 || functionIndex >= functions.Count))
                 {
-                    var networking = networkingField.GetValue(gameManager);
-                    if (networking != null)
-                    {
-                        var isConnectedProperty = AccessTools.Property(networking.GetType(), "IsConnected");
-                        if (isConnectedProperty != null)
-                        {
-                            bool isConnected = (bool)isConnectedProperty.GetValue(networking);
-                            if (isConnected)
-                            {
-                                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Exit_NoSave during active MP session!");
-                            }
-                        }
-                    }
+                    Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] functionIndex {functionIndex} out of range (0-{functions.Count - 1}), ignoring");
+                    return false;
                 }
             }
         }
         catch (Exception ex)
         {
-            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in Exit_NoSave logging: " + ex.Message);
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error checking ReceiveVirtualFunctionExecute bounds: " + ex.Message);
         }
-        
-        return true; // Continue with exit
+
+        return true; // Continue normally
+    }
+}
+
+/// <summary>
+/// FIX #14: Protect Computer.ReceiveVirtualEventInvoke from index out of range
+/// </summary>
+[HarmonyPatch(typeof(Game.ObjectScripts.Computer), "ReceiveVirtualEventInvoke")]
+public static class Fix_Computer_ReceiveVirtualEventInvoke
+{
+    static bool Prefix(Game.ObjectScripts.Computer __instance, int voIndex, int eventIndex)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return true;
+
+        try
+        {
+            var virtualObjectsField = AccessTools.Field(typeof(Game.ObjectScripts.Computer), "virtualObjects");
+            if (virtualObjectsField == null)
+                return true;
+
+            var virtualObjects = virtualObjectsField.GetValue(__instance) as System.Collections.IList;
+            if (virtualObjects == null || voIndex < 0 || voIndex >= virtualObjects.Count)
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] ReceiveVirtualEventInvoke: voIndex {voIndex} out of range, ignoring");
+                return false;
+            }
+
+            var virtualObject = virtualObjects[voIndex];
+            if (virtualObject == null)
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] ReceiveVirtualEventInvoke: virtualObjects[{voIndex}] is null, ignoring");
+                return false;
+            }
+
+            var eventsField = AccessTools.Field(virtualObject.GetType(), "events");
+            if (eventsField != null)
+            {
+                var events = eventsField.GetValue(virtualObject) as System.Collections.IList;
+                if (events != null && (eventIndex < 0 || eventIndex >= events.Count))
+                {
+                    Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] eventIndex {eventIndex} out of range (0-{events.Count - 1}), ignoring");
+                    return false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error checking ReceiveVirtualEventInvoke bounds: " + ex.Message);
+        }
+
+        return true;
+    }
+}
+
+/// <summary>
+/// FIX #15: Protect Computer.ReceiveVirtualObjectDestroy from index out of range
+/// </summary>
+[HarmonyPatch(typeof(Game.ObjectScripts.Computer), "ReceiveVirtualObjectDestroy")]
+public static class Fix_Computer_ReceiveVirtualObjectDestroy
+{
+    static bool Prefix(Game.ObjectScripts.Computer __instance, int voIndex)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return true;
+
+        try
+        {
+            var virtualObjectsField = AccessTools.Field(typeof(Game.ObjectScripts.Computer), "virtualObjects");
+            if (virtualObjectsField == null)
+                return true;
+
+            var virtualObjects = virtualObjectsField.GetValue(__instance) as System.Collections.IList;
+            if (virtualObjects == null || voIndex < 0 || voIndex >= virtualObjects.Count)
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] ReceiveVirtualObjectDestroy: voIndex {voIndex} out of range, ignoring");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error checking ReceiveVirtualObjectDestroy bounds: " + ex.Message);
+        }
+
+        return true;
+    }
+}
+
+/// <summary>
+/// FIX #16: Protect ObjectManager.ApplyAllGUS from NullReferenceExceptions during shutdown
+/// Prevents crash cascade when objects are being destroyed
+/// </summary>
+[HarmonyPatch(typeof(Game.EntityFramework.ObjectManager), "ApplyAllGUS", new Type[] { typeof(UnityEngine.Vector3), typeof(float) })]
+public static class Fix_ObjectManager_ApplyAllGUS
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            if (__exception is NullReferenceException)
+            {
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] ObjectManager.ApplyAllGUS NullRef absorbed (likely during shutdown)");
+                return null; // Cancel the exception
+            }
+        }
+        return __exception;
     }
 }
