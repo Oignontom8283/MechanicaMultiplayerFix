@@ -612,3 +612,55 @@ public static class Fix_NetworkedGameManager_OnMasterClientSwitched
         }
     }
 }
+
+/// <summary>
+/// FIX #18: Improve OnDisconnected to show clear messages and handle both server and client disconnects
+/// Prevents infinite loading when connection is lost
+/// </summary>
+[HarmonyPatch(typeof(Game.Networking.NetworkedGameManager), "OnDisconnected")]
+public static class Fix_NetworkedGameManager_OnDisconnected
+{
+    static void Prefix(Photon.Realtime.DisconnectCause cause)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+
+        try
+        {
+            bool isMasterClient = Photon.Pun.PhotonNetwork.IsMasterClient;
+            bool isConnected = Photon.Pun.PhotonNetwork.IsConnected;
+            
+            Debug.LogError($"[MechanicaMultiplayerFix] [Fix] OnDisconnected called! Cause: {cause}, IsMasterClient: {isMasterClient}, IsConnected: {isConnected}");
+            
+            // If this is the server (master client) disconnecting, log it clearly
+            if (isMasterClient)
+            {
+                Debug.LogError("[MechanicaMultiplayerFix] [Fix] SERVER IS DISCONNECTING - This will cause clients to timeout");
+            }
+            
+            // For clients, show clear disconnect reason
+            if (!isMasterClient && cause != Photon.Realtime.DisconnectCause.DisconnectByClientLogic && 
+                cause != Photon.Realtime.DisconnectCause.None)
+            {
+                string userMessage = $"CONNECTION LOST: {cause}";
+                
+                Debug.LogError($"[MechanicaMultiplayerFix] [Fix] Client disconnect message: {userMessage}");
+                
+                // Force exit with user-friendly message
+                if (UnityEngine.Object.FindObjectOfType<Game.Saving.SaveManager>() != null)
+                {
+                    var saveManager = UnityEngine.Object.FindObjectOfType<Game.Saving.SaveManager>();
+                    var exitMethod = AccessTools.Method(typeof(Game.Saving.SaveManager), "Exit_NoSave");
+                    if (exitMethod != null)
+                    {
+                        exitMethod.Invoke(saveManager, new object[] { userMessage, false });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in OnDisconnected: " + ex.Message);
+        }
+    }
+}
