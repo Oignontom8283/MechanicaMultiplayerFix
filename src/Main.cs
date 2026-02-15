@@ -348,3 +348,21 @@ public static class Fix_Lobby_FullLobbyUIRefresh
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #10: Protect LobbyJoinRequested from errors
+/// Prevents crashes during lobby join attempts
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.Lobby), "LobbyJoinRequested")]
+public static class Fix_Lobby_LobbyJoinRequested
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Lobby.LobbyJoinRequested error absorbed: " + __exception.Message);
+            return null; // Cancel the exception
+        }
+        return __exception;
+    }
+}
