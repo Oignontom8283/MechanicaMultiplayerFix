@@ -327,3 +327,24 @@ public static class Fix_Lobby_UpdateLeaveButton
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #9: Protect FullLobbyUIRefresh from NullReferenceException
+/// Prevents UI crashes during lobby refresh operations
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.Lobby), "FullLobbyUIRefresh")]
+public static class Fix_Lobby_FullLobbyUIRefresh
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            if (__exception is NullReferenceException)
+            {
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Lobby.FullLobbyUIRefresh NullRef absorbed");
+                return null; // Cancel the exception
+            }
+        }
+        return __exception;
+    }
+}
