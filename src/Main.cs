@@ -748,3 +748,59 @@ public class PhotonHealthMonitor : MonoBehaviour
         }
     }
     
+    void Update()
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+            
+        float currentTime = Time.realtimeSinceStartup;
+        if (currentTime - lastCheckTime < CHECK_INTERVAL)
+            return;
+            
+        lastCheckTime = currentTime;
+        
+        // Check Photon connection status
+        if (Photon.Pun.PhotonNetwork.IsConnected)
+        {
+            try
+            {
+                var client = Photon.Pun.PhotonNetwork.NetworkingClient;
+                if (client != null)
+                {
+                    // Check if we're lagging
+                    int ping = Photon.Pun.PhotonNetwork.GetPing();
+                    if (ping > 1000) // More than 1 second ping
+                    {
+                        consecutiveWarnings++;
+                        Debug.LogWarning($"[MechanicaMultiplayerFix] [Health] High ping detected: {ping}ms (warning #{consecutiveWarnings})");
+                        
+                        if (consecutiveWarnings >= 5)
+                        {
+                            Debug.LogError("[MechanicaMultiplayerFix] [Health] Connection severely degraded, possible timeout imminent!");
+                        }
+                    }
+                    else if (consecutiveWarnings > 0 && ping < 500)
+                    {
+                        Debug.Log($"[MechanicaMultiplayerFix] [Health] Connection recovered (ping: {ping}ms)");
+                        consecutiveWarnings = 0;
+                    }
+                    
+                    // Force service call to keep connection alive
+                    if (Photon.Pun.PhotonNetwork.IsMasterClient)
+                    {
+                        // Server: ensure we're actively processing
+                        Photon.Pun.PhotonNetwork.SendAllOutgoingCommands();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[MechanicaMultiplayerFix] [Health] Monitor error: {ex.Message}");
+            }
+        }
+        else
+        {
+            consecutiveWarnings = 0;
+        }
+    }
+}
