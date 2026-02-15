@@ -3,3 +3,4 @@ obj/
 bin/
 Assembly-CSharp/
 log/
+tools.config.json
