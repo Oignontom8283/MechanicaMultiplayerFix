@@ -387,3 +387,53 @@ public static class Fix_Lobby_PlayerEnterOrLeave
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #12: Log and validate Exit_NoSave calls
+/// Helps diagnose premature exit triggers
+/// </summary>
+[HarmonyPatch(typeof(Game.Saving.SaveManager), "Exit_NoSave")]
+public static class Fix_SaveManager_Exit_NoSave
+{
+    static bool Prefix()
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return true;
+
+        try
+        {
+            // Log the call with stack trace for debugging
+            Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Exit_NoSave called, stack trace:\n" + 
+                System.Environment.StackTrace);
+            
+            // Check if we're in a multiplayer session
+            var gameManager = UnityEngine.Object.FindObjectOfType<Game.GameManager>();
+            if (gameManager != null)
+            {
+                var networkingField = AccessTools.Field(typeof(Game.GameManager), "networking");
+                if (networkingField != null)
+                {
+                    var networking = networkingField.GetValue(gameManager);
+                    if (networking != null)
+                    {
+                        var isConnectedProperty = AccessTools.Property(networking.GetType(), "IsConnected");
+                        if (isConnectedProperty != null)
+                        {
+                            bool isConnected = (bool)isConnectedProperty.GetValue(networking);
+                            if (isConnected)
+                            {
+                                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Exit_NoSave during active MP session!");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in Exit_NoSave logging: " + ex.Message);
+        }
+        
+        return true; // Continue with exit
+    }
+}
