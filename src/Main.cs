@@ -666,11 +666,12 @@ public static class Fix_NetworkedGameManager_OnDisconnected
 }
 
 /// <summary>
-/// FIX #19: Install log throttling to prevent log spam from blocking main thread
-/// Curvy errors can spam 1000s of identical messages per second, slowing Unity and causing Photon timeouts
+/// FIX #19: REAL FIX - Patch CurvySplineSegment to CORRECT negative array sizes
+/// This FIXES the root cause instead of hiding errors
+/// Uses Transpiler to inject parameter validation BEFORE Array.Resize calls
 /// </summary>
 [HarmonyPatch]
-public static class Fix_LogThrottling
+public static class Fix_CurvySplineSegment_Patch
 {
     private static int correctedCount = 0;
     
