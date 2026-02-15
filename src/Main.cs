@@ -699,28 +699,41 @@ public static class Fix_LogThrottling
             
             if (lastLogTime.ContainsKey(key))
             {
-                float timeSince = currentTime - lastLogTime[key];
-                if (timeSince < LOG_THROTTLE_SECONDS)
-                {
-                    // Suppress this log
-                    if (!suppressedCount.ContainsKey(key))
-                        suppressedCount[key] = 0;
-                    suppressedCount[key]++;
-                    return;
-                }
-                else
-                {
-                    // Log how many were suppressed
-                    if (suppressedCount.ContainsKey(key) && suppressedCount[key] > 0)
-                    {
-                        Debug.LogWarning($"[MechanicaMultiplayerFix] [LogThrottle] Suppressed {suppressedCount[key]} Curvy errors in last {(int)timeSince}s");
-                        suppressedCount[key] = 0;
-                    }
-                }
+                // The newSize parameter is on the stack
+                // Insert our validation call that will correct negative values
+                // Stack before: [array ref, size]
+                // We need to validate 'size' and replace it if negative
+                
+                codes.Insert(i, new CodeInstruction(System.Reflection.Emit.OpCodes.Call, validationMethod));
+                // Stack after validation: [array ref, corrected_size]
+                // Then the original Array.Resize call happens
+                
+                patchCount++;
+                i++; // Skip the instruction we just inserted
             }
-            
-            lastLogTime[key] = currentTime;
         }
+        
+        if (patchCount > 0)
+        {
+            Debug.Log($"[MechanicaMultiplayerFix] [Fix] Injected {patchCount} array size validations into CurvySplineSegment");
+        }
+        
+        return codes;
+    }
+    
+    // This method validates and corrects array sizes
+    public static int ValidateArraySize(int requestedSize)
+    {
+        if (requestedSize < 0)
+        {
+            correctedCount++;
+            if (correctedCount <= 10) // Only log first 10 to avoid spam
+            {
+                Debug.LogWarning($"[MechanicaMultiplayerFix] [Fix] CORRECTED negative array size {requestedSize} to 0 (#{correctedCount})");
+            }
+            return 0; // Correct negative to 0
+        }
+        return requestedSize; // Keep valid sizes unchanged
     }
 }
 
