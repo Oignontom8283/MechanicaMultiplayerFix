@@ -11,7 +11,7 @@ if (-not $csproj) { # If no .csproj file is found, exit with an error message
 }
 $projName = [System.IO.Path]::GetFileNameWithoutExtension($csproj.Name) # Get the project name from the .csproj file name
 
-$OutputDir = Join-Path (Get-Location) "bin" "Release" "netstandard2.1"
+$OutputDir = Join-Path (Join-Path (Join-Path (Get-Location) "bin") "Release") "netstandard2.1"
 $OutPutFile = Join-Path $OutputDir "$projName.dll"
 
 
@@ -33,7 +33,7 @@ catch {
 }
 
 # Check if Game, BepInEx and plugins dir exist, if not, show an error message and exit
-$pluginsDir = Join-Path $Config.GameDir "BepInEx" "plugins"
+$pluginsDir = Join-Path (Join-Path $Config.GameDir "BepInEx") "plugins"
 if (-Not (Test-Path $pluginsDir)) {
     Write-Host "ERROR: Game not installed or BepInEx not installed or BepInEx not initialized !" -ForegroundColor Red
     Write-Host "HELP: Please make sure the game is installed, BepInEx is installed and initialized (run the game at least once with BepInEx installed)." -ForegroundColor Cyan
