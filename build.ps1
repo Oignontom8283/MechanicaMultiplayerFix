@@ -37,6 +37,7 @@ $pluginsDir = Join-Path $Config.GameDir "BepInEx\plugins"
 if (-Not (Test-Path $pluginsDir)) {
     Write-Host "ERROR: Game not installed or BepInEx not installed or BepInEx not initialized !" -ForegroundColor Red
     Write-Host "HELP: Please make sure the game is installed, BepInEx is installed and initialized (run the game at least once with BepInEx installed)." -ForegroundColor Cyan
+    Write-Host "Expected plugins directory: $pluginsDir" -ForegroundColor Cyan
     exit 1
 }
 
