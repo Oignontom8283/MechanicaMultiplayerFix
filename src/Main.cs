@@ -4,6 +4,7 @@ using HarmonyLib;
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using Game.Saving;
@@ -756,102 +757,98 @@ public static class Fix_CurvySplineSegment_Patch
 }
 
 /// <summary>
-/// FIX #20: Monitor Photon connection health and prevent server timeouts
-/// Detect when connection is degrading and take preventive action
+/// FIX #20: Additional safety - Patch update methods to prevent propagation
 /// </summary>
-public class PhotonHealthMonitor : MonoBehaviour
+[HarmonyPatch]
+public static class Fix_CurvySpline_ProcessDirty_Patch
 {
-    private static PhotonHealthMonitor instance;
-    private float lastCheckTime = 0f;
-    private const float CHECK_INTERVAL = 2f; // Check every 2 seconds
-    private int consecutiveWarnings = 0;
-    
-    void Awake()
+    static System.Reflection.MethodBase TargetMethod()
     {
-        if (instance == null)
+        try
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
+            var assembly = System.AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name.Contains("Assembly-CSharp"));
+                
+            if (assembly == null)
+                return null;
+            
+            var type = assembly.GetTypes()
+                .FirstOrDefault(t => t.FullName == "FluffyUnderware.Curvy.CurvySpline");
+                
+            if (type == null)
+                return null;
+            
+            var method = AccessTools.Method(type, "ProcessDirtyControlPoints");
+            if (method != null)
+            {
+                Debug.Log("[MechanicaMultiplayerFix] [Fix] Successfully targeted CurvySpline.ProcessDirtyControlPoints");
+            }
+            return method;
         }
-        else
+        catch
         {
-            Destroy(gameObject);
+            return null;
         }
     }
     
-    void Update()
+    static Exception Finalizer(Exception __exception)
     {
-        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
-            return;
-            
-        float currentTime = Time.realtimeSinceStartup;
-        if (currentTime - lastCheckTime < CHECK_INTERVAL)
-            return;
-            
-        lastCheckTime = currentTime;
-        
-        // Check Photon connection status
-        if (Photon.Pun.PhotonNetwork.IsConnected)
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
         {
-            try
+            if (__exception is System.ArgumentOutOfRangeException)
             {
-                var client = Photon.Pun.PhotonNetwork.NetworkingClient;
-                if (client != null)
-                {
-                    // Check if we're lagging
-                    int ping = Photon.Pun.PhotonNetwork.GetPing();
-                    if (ping > 1000) // More than 1 second ping
-                    {
-                        consecutiveWarnings++;
-                        Debug.LogWarning($"[MechanicaMultiplayerFix] [Health] High ping detected: {ping}ms (warning #{consecutiveWarnings})");
-                        
-                        if (consecutiveWarnings >= 5)
-                        {
-                            Debug.LogError("[MechanicaMultiplayerFix] [Health] Connection severely degraded, possible timeout imminent!");
-                        }
-                    }
-                    else if (consecutiveWarnings > 0 && ping < 500)
-                    {
-                        Debug.Log($"[MechanicaMultiplayerFix] [Health] Connection recovered (ping: {ping}ms)");
-                        consecutiveWarnings = 0;
-                    }
-                    
-                    // Force service call to keep connection alive
-                    if (Photon.Pun.PhotonNetwork.IsMasterClient)
-                    {
-                        // Server: ensure we're actively processing
-                        Photon.Pun.PhotonNetwork.SendAllOutgoingCommands();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[MechanicaMultiplayerFix] [Health] Monitor error: {ex.Message}");
+                // This should rarely happen now that Fix #19 corrects the values
+                // But if it does, log it as a fallback catch
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Fallback: Caught uncorrected ArgumentOutOfRangeException in ProcessDirtyControlPoints");
+                return null;
             }
         }
-        else
-        {
-            consecutiveWarnings = 0;
-        }
+        return __exception;
     }
 }
 
 /// <summary>
-/// FIX #21: Initialize health monitor when game loads
+/// FIX #21: Fallback - Ultimate safety net
+/// This only triggers if the Transpiler somehow missed a case
 /// </summary>
-[HarmonyPatch(typeof(Game.GameManager), "Awake")]
-public static class Fix_InitializeHealthMonitor
+[HarmonyPatch]
+public static class Fix_CurvySplineSegment_Fallback
 {
-    static void Postfix(Game.GameManager __instance)
+    static System.Reflection.MethodBase TargetMethod()
     {
-        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
-            return;
-            
-        // Add health monitor component to GameManager
-        if (__instance.GetComponent<PhotonHealthMonitor>() == null)
+        try
         {
-            __instance.gameObject.AddComponent<PhotonHealthMonitor>();
-            Debug.Log("[MechanicaMultiplayerFix] [Health] Photon health monitor initialized");
+            var assembly = System.AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name.Contains("Assembly-CSharp"));
+                
+            if (assembly == null)
+                return null;
+            
+            var type = assembly.GetTypes()
+                .FirstOrDefault(t => t.FullName == "FluffyUnderware.Curvy.CurvySplineSegment");
+                
+            if (type == null)
+                return null;
+            
+            return AccessTools.Method(type, "refreshCurveINTERNAL");
         }
+        catch
+        {
+            return null;
+        }
+    }
+    
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            if (__exception is System.ArgumentOutOfRangeException)
+            {
+                // This should NEVER happen if Fix #19 worked correctly
+                Debug.LogError("[MechanicaMultiplayerFix] [Fix] FALLBACK TRIGGERED: Transpiler failed to correct array size!");
+                return null;
+            }
+        }
+        return __exception;
     }
 }
