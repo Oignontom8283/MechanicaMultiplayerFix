@@ -306,3 +306,24 @@ public static class Fix_PauseMenu_QuitButtonClicked
         return true; // Continue normal execution
     }
 }
+
+/// <summary>
+/// FIX #8: Protect UpdateLeaveButton from NullReferenceException
+/// Prevents UI crashes during lobby state transitions
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.Lobby), "UpdateLeaveButton")]
+public static class Fix_Lobby_UpdateLeaveButton
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            if (__exception is NullReferenceException)
+            {
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Lobby.UpdateLeaveButton NullRef absorbed");
+                return null; // Cancel the exception
+            }
+        }
+        return __exception;
+    }
+}
