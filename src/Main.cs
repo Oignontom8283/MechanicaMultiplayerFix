@@ -366,3 +366,24 @@ public static class Fix_Lobby_LobbyJoinRequested
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #11: Protect PlayerEnterOrLeave from NullReferenceException
+/// Prevents UI crashes during player join/leave events
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.Lobby), "PlayerEnterOrLeave")]
+public static class Fix_Lobby_PlayerEnterOrLeave
+{
+    static Exception Finalizer(Exception __exception)
+    {
+        if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+        {
+            if (__exception is NullReferenceException)
+            {
+                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Lobby.PlayerEnterOrLeave NullRef absorbed");
+                return null; // Cancel the exception
+            }
+        }
+        return __exception;
+    }
+}
