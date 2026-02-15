@@ -804,3 +804,23 @@ public class PhotonHealthMonitor : MonoBehaviour
         }
     }
 }
+
+/// <summary>
+/// FIX #21: Initialize health monitor when game loads
+/// </summary>
+[HarmonyPatch(typeof(Game.GameManager), "Awake")]
+public static class Fix_InitializeHealthMonitor
+{
+    static void Postfix(Game.GameManager __instance)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+            
+        // Add health monitor component to GameManager
+        if (__instance.GetComponent<PhotonHealthMonitor>() == null)
+        {
+            __instance.gameObject.AddComponent<PhotonHealthMonitor>();
+            Debug.Log("[MechanicaMultiplayerFix] [Health] Photon health monitor initialized");
+        }
+    }
+}
