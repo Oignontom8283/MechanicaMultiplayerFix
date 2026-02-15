@@ -723,3 +723,28 @@ public static class Fix_LogThrottling
         }
     }
 }
+
+/// <summary>
+/// FIX #20: Monitor Photon connection health and prevent server timeouts
+/// Detect when connection is degrading and take preventive action
+/// </summary>
+public class PhotonHealthMonitor : MonoBehaviour
+{
+    private static PhotonHealthMonitor instance;
+    private float lastCheckTime = 0f;
+    private const float CHECK_INTERVAL = 2f; // Check every 2 seconds
+    private int consecutiveWarnings = 0;
+    
+    void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
