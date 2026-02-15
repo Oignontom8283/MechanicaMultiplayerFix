@@ -271,3 +271,38 @@ public static class Fix_SaveManager_RetrievePlayerData
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #7: Block automatic QuitButtonClicked when game is not actually paused
+/// Prevents premature "Exiting, no save" disconnects during replication
+/// </summary>
+[HarmonyPatch(typeof(Game.UI.PauseMenu), "QuitButtonClicked")]
+public static class Fix_PauseMenu_QuitButtonClicked
+{
+    static bool Prefix(Game.UI.PauseMenu __instance)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return true;
+
+        // Only allow quit if pause menu is actually active
+        try
+        {
+            var isPausedField = AccessTools.Field(typeof(Game.UI.PauseMenu), "isPaused");
+            if (isPausedField != null)
+            {
+                bool isPaused = (bool)isPausedField.GetValue(__instance);
+                if (!isPaused)
+                {
+                    Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Blocked spurious QuitButtonClicked (not paused)");
+                    return false; // Block execution
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in QuitButtonClicked check: " + ex.Message);
+        }
+        
+        return true; // Continue normal execution
+    }
+}
