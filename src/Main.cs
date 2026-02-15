@@ -400,6 +400,24 @@ public static class Fix_SaveManager_Exit_NoSave
         if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
             return true;
 
+        // Just log the call - simplified from previous version
+        Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Exit_NoSave called");
+        return true;
+    }
+}
+
+/// <summary>
+/// FIX #13: Protect Computer.ReceiveVirtualFunctionExecute from index out of range
+/// CRITICAL: This RPC crashes when server/client virtualObjects lists are out of sync
+/// </summary>
+[HarmonyPatch(typeof(Game.ObjectScripts.Computer), "ReceiveVirtualFunctionExecute")]
+public static class Fix_Computer_ReceiveVirtualFunctionExecute
+{
+    static bool Prefix(Game.ObjectScripts.Computer __instance, int voIndex, int functionIndex)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return true;
+
         try
         {
             // Log the call with stack trace for debugging
