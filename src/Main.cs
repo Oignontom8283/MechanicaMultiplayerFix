@@ -672,32 +672,49 @@ public static class Fix_NetworkedGameManager_OnDisconnected
 [HarmonyPatch]
 public static class Fix_LogThrottling
 {
-    private static Dictionary<string, float> lastLogTime = new Dictionary<string, float>();
-    private static Dictionary<string, int> suppressedCount = new Dictionary<string, int>();
-    private const float LOG_THROTTLE_SECONDS = 5f; // Only allow same message once per 5 seconds
+    private static int correctedCount = 0;
     
-    static Fix_LogThrottling()
+    static System.Reflection.MethodBase TargetMethod()
     {
-        Application.logMessageReceived += HandleLog;
+        try
+        {
+            var assembly = System.AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name.Contains("Assembly-CSharp"));
+                
+            if (assembly == null)
+                return null;
+            
+            var type = assembly.GetTypes()
+                .FirstOrDefault(t => t.FullName == "FluffyUnderware.Curvy.CurvySplineSegment");
+                
+            if (type == null)
+                return null;
+            
+            var method = AccessTools.Method(type, "refreshCurveINTERNAL");
+            if (method != null)
+            {
+                Debug.Log("[MechanicaMultiplayerFix] [Fix] Successfully targeted CurvySplineSegment.refreshCurveINTERNAL for REAL FIX");
+            }
+            return method;
+        }
+        catch
+        {
+            return null;
+        }
     }
     
-    private static void HandleLog(string logString, string stackTrace, LogType type)
+    static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
-            return;
-            
-        // Only throttle errors (not warnings or info)
-        if (type != LogType.Error && type != LogType.Exception)
-            return;
-            
-        // Specifically throttle Curvy and other known spammy errors
-        if (logString.Contains("ArgumentOutOfRangeException") && 
-            (stackTrace.Contains("FluffyUnderware.Curvy") || stackTrace.Contains("CurvySpline")))
+        var codes = new List<CodeInstruction>(instructions);
+        var validationMethod = AccessTools.Method(typeof(Fix_CurvySplineSegment_Patch), nameof(ValidateArraySize));
+        int patchCount = 0;
+        
+        for (int i = 0; i < codes.Count; i++)
         {
-            string key = "CurvySplineError";
-            float currentTime = Time.realtimeSinceStartup;
-            
-            if (lastLogTime.ContainsKey(key))
+            // Find calls to Array.Resize
+            if (codes[i].opcode == System.Reflection.Emit.OpCodes.Call && 
+                codes[i].operand != null &&
+                codes[i].operand.ToString().Contains("System.Array::Resize"))
             {
                 // The newSize parameter is on the stack
                 // Insert our validation call that will correct negative values
