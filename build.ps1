@@ -28,7 +28,7 @@ try {
     $Config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 }
 catch {
-    Write-Error "Impossible de lire ou parser le fichier JSON : $($_.Exception.Message)"
+    Write-Error "Failed to read or parse the JSON file: $($_.Exception.Message)"
     exit 1
 }
 
