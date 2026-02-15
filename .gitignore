@@ -2,3 +2,4 @@ MechanicaMultiplayerFix.sln
 obj/
 bin/
 Assembly-CSharp/
+log/
