@@ -574,3 +574,41 @@ public static class Fix_ObjectManager_ApplyAllGUS
         return __exception;
     }
 }
+
+/// <summary>
+/// FIX #17: Improve OnMasterClientSwitched to immediately exit when host leaves
+/// Shows clear error message to clients when server disconnects/crashes
+/// </summary>
+[HarmonyPatch(typeof(Game.Networking.NetworkedGameManager), "OnMasterClientSwitched")]
+public static class Fix_NetworkedGameManager_OnMasterClientSwitched
+{
+    static void Prefix(Photon.Realtime.Player newMasterClient)
+    {
+        if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
+            return;
+
+        try
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Master client switched! New master: " + 
+                (newMasterClient != null ? newMasterClient.NickName : "null"));
+            
+            // Force immediate exit with clear message
+            if (UnityEngine.Object.FindObjectOfType<Game.Saving.SaveManager>() != null)
+            {
+                var saveManager = UnityEngine.Object.FindObjectOfType<Game.Saving.SaveManager>();
+                Debug.LogError("[MechanicaMultiplayerFix] [Fix] SERVER DISCONNECTED - Forcing exit to menu");
+                
+                // Call Exit_NoSave with clear message
+                var exitMethod = AccessTools.Method(typeof(Game.Saving.SaveManager), "Exit_NoSave");
+                if (exitMethod != null)
+                {
+                    exitMethod.Invoke(saveManager, new object[] { "SERVER DISCONNECTED OR CRASHED", false });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in OnMasterClientSwitched: " + ex.Message);
+        }
+    }
+}
