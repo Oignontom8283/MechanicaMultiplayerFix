@@ -4,3 +4,4 @@ bin/
 Assembly-CSharp/
 log/
 tools.config.json
+*.lnk
