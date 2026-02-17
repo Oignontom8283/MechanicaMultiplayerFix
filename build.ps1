@@ -52,7 +52,7 @@ if ($LASTEXITCODE -eq 0) {
     Copy-Item $OutPutFile $pluginsDir -Force
 
     # Check if the copy was successful and also copy to output directory
-    if (!(Test-Path $CurrentOutDir)) { New-Item $CurrentOutDir -Type Directory };
+    if (!(Test-Path $CurrentOutDir)) { $nul = New-Item $CurrentOutDir -Type Directory };
     
     Copy-Item $OutPutFile $CurrentOutDir -Force
 
