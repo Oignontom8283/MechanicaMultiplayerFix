@@ -4,6 +4,8 @@ $DefaultConfig = @{
     GameDir = "C:\Program Files (x86)\Steam\steamapps\common\Mechanica"
 }
 
+$outputDir = Join-Path (Get-Location) "output"
+
 $csproj = Get-ChildItem -Path . -Filter "*.csproj" | Select-Object -First 1 # Get the .csproj file
 if (-not $csproj) { # If no .csproj file is found, exit with an error message
     Write-Host "ERROR: No .csproj file found in the current directory!" -ForegroundColor Red
@@ -48,8 +50,15 @@ dotnet build -c Release
 # Check if the build was successful and copy the DLL to the plugins directory
 if ($LASTEXITCODE -eq 0) {
     Copy-Item $OutPutFile $pluginsDir -Force
+
+    # Check if the copy was successful and also copy to output directory
+    if (!(Test-Path $outputDir)) { New-Item $outputDir -Type Directory };
+    
+    Copy-Item $OutPutFile $outputDir -Force
+
     if ($?) {
         Write-Host "Build successful and DLL copied to plugins directory -> $pluginsDir" -ForegroundColor Green
+        Write-Host "DLL also copied to output directory -> $outputDir" -ForegroundColor Green
     } else {
         Write-Host "Build successful but failed to copy DLL to plugins directory." -ForegroundColor Red
     }
