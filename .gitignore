@@ -5,3 +5,4 @@ Assembly-CSharp/
 log/
 tools.config.json
 *.lnk
+output/
