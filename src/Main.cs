@@ -795,11 +795,10 @@ public static class Fix_CurvySpline_ProcessDirty_Patch
     {
         if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
         {
-            if (__exception is System.ArgumentOutOfRangeException)
+            // CORRECTED: Catch IndexOutOfRangeException, not ArgumentOutOfRangeException
+            if (__exception is System.IndexOutOfRangeException || __exception is System.ArgumentOutOfRangeException)
             {
-                // This should rarely happen now that Fix #19 corrects the values
-                // But if it does, log it as a fallback catch
-                Debug.LogWarning("[MechanicaMultiplayerFix] [Fix] Fallback: Caught uncorrected ArgumentOutOfRangeException in ProcessDirtyControlPoints");
+                // Suppress array access errors in Curvy spline processing
                 return null;
             }
         }
