@@ -151,40 +151,40 @@ namespace MechanicaMultiplayerFix
                 "Fix NullReferenceExceptions in lobby and menu UI"
             );
             
-            // V3.0 professional optimization modules
+            // V3.0 professional optimization modules (EXPERIMENTAL - disabled by default)
             enableNetworkBatching = Config.Bind(
                 "V3_Optimizations",
                 "NetworkBatching",
-                true,
-                "[V3.0] Batch RPCs for 80% fewer network calls + GZip compression"
+                false,
+                "[V3.0] EXPERIMENTAL! Batch RPCs - Currently breaks Quaternion serialization"
             );
             
             enableSaveSystemV2 = Config.Bind(
                 "V3_Optimizations",
                 "SaveSystemV2",
-                true,
-                "[V3.0] Modern save system: single JSON file, 10x faster, 80% smaller"
+                false,
+                "[V3.0] EXPERIMENTAL! Modern save - Currently can't find SaveManager methods"
             );
             
             enablePathfindingCache = Config.Bind(
                 "V3_Optimizations",
                 "PathfindingCache",
-                true,
-                "[V3.0] Cache pathfinding with LRU for 90% CPU reduction"
+                false,
+                "[V3.0] EXPERIMENTAL! Pathfinding cache - Not yet integrated with game"
             );
             
             enableObjectPool = Config.Bind(
                 "V3_Optimizations",
                 "ObjectPool",
-                true,
-                "[V3.0] Object reuse system for 50% fewer GC spikes"
+                false,
+                "[V3.0] EXPERIMENTAL! Object pooling - May interfere with spawning"
             );
             
             enableLagCompensation = Config.Bind(
                 "V3_Optimizations",
                 "LagCompensation",
-                true,
-                "[V3.0] Client prediction + interpolation for smooth 500ms+ pings"
+                false,
+                "[V3.0] EXPERIMENTAL! Lag compensation - Not fully tested"
             );
             
             // Curvy optimization mode
