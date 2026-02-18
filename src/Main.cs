@@ -69,54 +69,53 @@ public static class DebugBuildGetterPatch
 
 /// <summary>
 /// FIX #1: Force DateTime to use InvariantCulture during saves
-/// Intercepts SaveManager.SaveGameDataFile() - This is the method that saves dates
+/// SIMPLIFIED: Use Postfix to fix the date AFTER the save is written
+/// (Can't use Prefix because infoPath is a property, not a field)
 /// </summary>
 [HarmonyPatch(typeof(Game.Saving.SaveManager), "SaveGameDataFile")]
 public static class Fix_SaveManager_SaveGameDataFile
 {
-    static bool Prefix(Game.Saving.SaveManager __instance)
+    static void Postfix(Game.Saving.SaveManager __instance)
     {
         if (!MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
-            return true; // Let the original execute
+            return;
 
         try
         {
-            // Retrieve the file path (private field)
-            string infoPath = (string)AccessTools.Field(typeof(Game.Saving.SaveManager), "infoPath").GetValue(__instance);
-            
-            if (!System.IO.File.Exists(infoPath))
-                return false;
+            // Get the infoPath via reflection (it's a property)
+            var infoPathProperty = AccessTools.Property(typeof(Game.Saving.SaveManager), "infoPath");
+            if (infoPathProperty == null)
+                return;
+                
+            string infoPath = (string)infoPathProperty.GetValue(__instance);
+            if (string.IsNullOrEmpty(infoPath) || !System.IO.File.Exists(infoPath))
+                return;
 
-            // Load and modify the save
+            // Load the save that was just written
             string jsonText = System.IO.File.ReadAllText(infoPath);
             GameSave save = JsonUtility.FromJson<GameSave>(jsonText);
             
             if (save != null)
             {
-                // FIX: Use InvariantCulture instead of the local culture
-                save.lastPlayedDate = DateTime.Now.ToString("G", CultureInfo.InvariantCulture);
-                
-                // Update other information
-                save.timeOfDay = Game.Utilities.Singleton<Game.TimeManagement.TimeManager>.Instance.time;
-                save.timeSinceGameCreated = Game.Utilities.Singleton<Game.TimeManagement.TimeManager>.Instance.timeSinceSaveCreated;
-                save.elapsedDays = Game.Utilities.Singleton<Game.TimeManagement.TimeManager>.Instance.elapsedDays;
-                save.daysSurvived = Game.Utilities.Singleton<Game.TimeManagement.TimeManager>.Instance.daysSurvived;
-                save.postUpdate = true;
-                save.crystalsRandomized = true;
-                
-                // Save
-                jsonText = JsonUtility.ToJson(save, true);
-                System.IO.File.WriteAllText(infoPath, jsonText);
-                
-                Debug.Log("[MechanicaMultiplayerFix] [Fix] Date saved with InvariantCulture: " + save.lastPlayedDate);
+                // Check if date needs fixing (contains culture-specific format)
+                DateTime testDate;
+                if (!DateTime.TryParse(save.lastPlayedDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out testDate))
+                {
+                    // Date is not in InvariantCulture, fix it
+                    if (DateTime.TryParse(save.lastPlayedDate, out testDate))
+                    {
+                        save.lastPlayedDate = testDate.ToString("G", CultureInfo.InvariantCulture);
+                        jsonText = JsonUtility.ToJson(save, true);
+                        System.IO.File.WriteAllText(infoPath, jsonText);
+                        Debug.Log("[MechanicaMultiplayerFix] [Fix] Date converted to InvariantCulture: " + save.lastPlayedDate);
+                    }
+                }
             }
-            
-            return false; // Abort original function call (we did it in its place)
         }
         catch (Exception ex)
         {
-            Debug.LogError("[MechanicaMultiplayerFix] [Fix] Error in SaveGameDataFile: " + ex.Message);
-            return true; // In case of error, let the original execute
+            // Don't log errors here - it causes spam during exit
+            // Just silently fail
         }
     }
 }
