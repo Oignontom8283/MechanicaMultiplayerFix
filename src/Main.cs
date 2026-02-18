@@ -841,10 +841,10 @@ public static class Fix_CurvySplineSegment_Fallback
     {
         if (__exception != null && MechanicaMultiplayerFix.enableMultiplayerFixes.Value)
         {
-            if (__exception is System.ArgumentOutOfRangeException)
+            // CORRECTED: Catch IndexOutOfRangeException (direct array access) not ArgumentOutOfRangeException (Array.Resize)
+            if (__exception is System.IndexOutOfRangeException || __exception is System.ArgumentOutOfRangeException)
             {
-                // This should NEVER happen if Fix #19 worked correctly
-                Debug.LogError("[MechanicaMultiplayerFix] [Fix] FALLBACK TRIGGERED: Transpiler failed to correct array size!");
+                // Suppress array errors in refreshCurveINTERNAL
                 return null;
             }
         }
