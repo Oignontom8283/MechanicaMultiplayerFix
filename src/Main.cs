@@ -112,7 +112,7 @@ public static class Fix_SaveManager_SaveGameDataFile
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Don't log errors here - it causes spam during exit
             // Just silently fail
