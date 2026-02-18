@@ -358,6 +358,20 @@ namespace MechanicaMultiplayerFix.Network
                 writer.Write(vec3.y);
                 writer.Write(vec3.z);
             }
+            else if (param is Quaternion quat)
+            {
+                writer.Write((byte)6); // Type: Quaternion
+                writer.Write(quat.x);
+                writer.Write(quat.y);
+                writer.Write(quat.z);
+                writer.Write(quat.w);
+            }
+            else if (param is Vector2 vec2)
+            {
+                writer.Write((byte)7); // Type: Vector2
+                writer.Write(vec2.x);
+                writer.Write(vec2.y);
+            }
             else
             {
                 writer.Write((byte)0); // Unsupported type = null
