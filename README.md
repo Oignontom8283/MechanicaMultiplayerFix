@@ -23,7 +23,7 @@ and the game's multiplayer mode remains very unstable, even with this mod.
 
 legally, please.
 
-## 1. Install BepInEx
+### 1. Install BepInEx
 
 - Download [BepInEx 5.4.23.5 win_x86](https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5).
 You should be able to use any version of BepInEx 5,
@@ -33,13 +33,13 @@ but I recommend using the same one used for the mod's development.
 
 - Launch the game once so BepInEx can create the necessary folders, then close the game.
 
-## 2. Install the mod
+### 2. Install the mod
 
 - Download the latest version of the mod [here](https://github.com/Oignontom8283/MechanicaMultiplayerFix/releases). It comes as a `.dll` file.
 
 - Copy the `.dll` file into the game's `BepInEx\plugins` folder. By default, it's `C:\Program Files (x86)\Steam\steamapps\common\Mechanica\BepInEx\plugins`.
 
-## 3. Done
+#### 3. Done
 
 ## Contribution
 
