@@ -39,7 +39,7 @@ but I recommend using the same one used for the mod's development.
 
 - Copy the `.dll` file into the game's `BepInEx\plugins` folder. By default, it's `C:\Program Files (x86)\Steam\steamapps\common\Mechanica\BepInEx\plugins`.
 
-#### 3. Done
+### 3. Done
 
 ## Contribution
 
